@@ -5,6 +5,8 @@
 //  Created by Chance Krueger on 1/27/26.
 //
 
+import Foundation
+
 public enum BudgetCategory {
     case bills
     case income
@@ -14,12 +16,47 @@ public enum BudgetCategory {
     case subscriptions
 }
 
-fileprivate struct Income {
+fileprivate class IncomeTracker {
     // SOURCE -> DESCRIPTION (UA, WORK, PERSONAL BIZ, ETC.)
+    private var source = ""
     // PAYDAY -> DAY OF PAY
+    private var payday: Date = Date.now
     // EXPECTED
+    private var expected: Double = 0
     // REAL
+    private var real: Double = 0
     // DEPOSITED IN -> WHICH ACCT
+    private var acct = ""
+    
+    init(source: String = "", payday: Date, expected: Double, real: Double, acct: String = "") {
+        self.source = source
+        self.payday = payday
+        self.expected = expected
+        self.real = real
+        self.acct = acct
+    }
+    
+    fileprivate func getSource() -> String {
+        return source
+    }
+    
+    fileprivate func getPayday() -> Date {
+        return payday
+    }
+    
+    fileprivate func getExpected() -> Double {
+        return expected
+    }
+    
+    fileprivate func getReal() -> Double {
+        return real
+    }
+    
+    fileprivate func getAcct() -> String {
+        return acct
+    }
+
+    
 }
 
 fileprivate struct formMap {
@@ -89,17 +126,13 @@ fileprivate class BudgetTracker {
 
 struct Budgeter {
     
-    private var income: BudgetTracker = BudgetTracker() // FIX THIS IS NOT SAME
+    private var income: [String: IncomeTracker] = [:] // FIX THIS IS NOT SAME
     private var bills: BudgetTracker = BudgetTracker()
     private var subscriptions: BudgetTracker = BudgetTracker()
     private var expenses: BudgetTracker = BudgetTracker()
     private var savings: BudgetTracker = BudgetTracker()
     private var debts: BudgetTracker = BudgetTracker()
     
-//    @available(*, deprecated, message: "Use getCertainBudget(category:) instead")
-//    public func getCertianBudget(category: BudgetCategory) -> Double {
-//        getCertainBudget(category: category)
-//    }
     
     public func getTotalBudget() -> Double {
         return getTotalExpensesBudget() + getTotalBillsBudget() + getTotalDebtsBudget()
