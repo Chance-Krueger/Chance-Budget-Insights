@@ -126,7 +126,7 @@ fileprivate class BudgetTracker {
 
 struct Budgeter {
     
-    private var income: [String: IncomeTracker] = [:] // FIX THIS IS NOT SAME
+    private var income: [IncomeTracker] = []
     private var bills: BudgetTracker = BudgetTracker()
     private var subscriptions: BudgetTracker = BudgetTracker()
     private var expenses: BudgetTracker = BudgetTracker()
@@ -135,8 +135,8 @@ struct Budgeter {
     
     
     public func getTotalBudget() -> Double {
-        return getTotalExpensesBudget() + getTotalBillsBudget() + getTotalDebtsBudget()
-            + getTotalSubscriptionsBudget() + getTotalSavingsBudget() + getTotalIncomeBudget()
+        return getTotalExpensesBudget() - getTotalBillsBudget() - getTotalDebtsBudget()
+            - getTotalSubscriptionsBudget() - getTotalSavingsBudget() + getTotalIncomeExpected()
     }
     
     public func getCertainBudget(category: BudgetCategory) -> Double {
@@ -144,7 +144,7 @@ struct Budgeter {
         case .bills:
             return getTotalBillsBudget()
         case .income:
-            return getTotalIncomeBudget()
+            return getTotalIncomeExpected()
         case .expenses:
             return getTotalExpensesBudget()
         case .savings:
@@ -157,8 +157,8 @@ struct Budgeter {
     }
     
     public func getTotalRealSpending() -> Double {
-        return getTotalExpensesRealSpending() + getTotalBillsRealSpending() + getTotalDebtsRealSpending()
-        + getTotalSubscriptionsRealSpending() + getTotalSavingsRealSpending() + getTotalIncomeRealSpending()
+        return getTotalExpensesRealSpending() - getTotalBillsRealSpending() - getTotalDebtsRealSpending()
+        - getTotalSubscriptionsRealSpending() - getTotalSavingsRealSpending() + getTotalIncomeReal()
     }
     
     public func getCertianRealSpending(category: BudgetCategory) -> Double {
@@ -166,7 +166,7 @@ struct Budgeter {
         case .bills:
             return getTotalBillsRealSpending()
         case .income:
-            return getTotalIncomeRealSpending()
+            return getTotalIncomeReal()
         case .expenses:
             return getTotalExpensesRealSpending()
         case .savings:
@@ -177,6 +177,10 @@ struct Budgeter {
             return getTotalSubscriptionsRealSpending()
         }
     }
+    
+    public mutating func addIncomeSource(source: String = "", payday: Date, expected: Double, real: Double, acct: String = "") {
+        income.append(IncomeTracker(source: source, payday: payday, expected: expected, real: real, acct: acct))
+    }
 
     private func getTotalBillsBudget() -> Double {
         bills.getMap().values.reduce(0) { partial, entry in
@@ -184,9 +188,9 @@ struct Budgeter {
         }
     }
     
-    private func getTotalIncomeBudget() -> Double {
-        income.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getBudget()
+    private func getTotalIncomeExpected() -> Double {
+        income.reduce(0) { partial, entry in
+            partial + entry.getExpected()
         }
     }
     
@@ -220,8 +224,8 @@ struct Budgeter {
         }
     }
 
-    private func getTotalIncomeRealSpending() -> Double {
-        income.getMap().values.reduce(0) { partial, entry in
+    private func getTotalIncomeReal() -> Double {
+        income.reduce(0) { partial, entry in
             partial + entry.getReal()
         }
     }
@@ -250,3 +254,5 @@ struct Budgeter {
         }
     }
 }
+
+
