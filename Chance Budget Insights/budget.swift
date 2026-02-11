@@ -1,258 +1,146 @@
-//
-//  budget.swift
-//  Chance Budget Insights
-//
-//  Created by Chance Krueger on 1/27/26.
-//
-
-import Foundation
-
-public enum BudgetCategory {
-    case bills
-    case income
-    case expenses
-    case savings
-    case debts
-    case subscriptions
+fileprivate class BudgetItem {
+    
+    private var name: String;
+    private var budgetedAmount: Double;
+    private var actualAmount: Double;
+    
+    fileprivate init(name: String, budgetedAmount: Double, actualAmount: Double) {
+        self.name = name
+        self.budgetedAmount = budgetedAmount
+        self.actualAmount = actualAmount
+    }
+    
+    fileprivate func getName() -> String {
+        return self.name
+    }
+    
+    fileprivate func getBudgetedAmount() -> Double {
+        return self.budgetedAmount
+    }
+    
+    fileprivate func getActualAmount() -> Double {
+        return self.actualAmount
+    }
+    
+    fileprivate func updateName(name: String) {
+        self.name = name
+    }
+    
+    fileprivate func updateActualAmount(actualAmount: Double) {
+        self.actualAmount += actualAmount
+    }
+    
+    fileprivate func setBudgetedAmount(amount: Double) {
+        self.budgetedAmount = amount
+    }
+    
+    fileprivate func getDifference() -> Double{
+        return self.budgetedAmount - self.actualAmount
+    }
 }
 
-fileprivate class IncomeTracker {
-    // SOURCE -> DESCRIPTION (UA, WORK, PERSONAL BIZ, ETC.)
-    private var source = ""
-    // PAYDAY -> DAY OF PAY
-    private var payday: Date = Date.now
-    // EXPECTED
-    private var expected: Double = 0
-    // REAL
-    private var real: Double = 0
-    // DEPOSITED IN -> WHICH ACCT
-    private var acct = ""
+fileprivate class BudgetCategory {
     
-    init(source: String = "", payday: Date, expected: Double, real: Double, acct: String = "") {
-        self.source = source
-        self.payday = payday
-        self.expected = expected
-        self.real = real
-        self.acct = acct
-    }
-    
-    fileprivate func getSource() -> String {
-        return source
-    }
-    
-    fileprivate func getPayday() -> Date {
-        return payday
-    }
-    
-    fileprivate func getExpected() -> Double {
-        return expected
-    }
-    
-    fileprivate func getReal() -> Double {
-        return real
-    }
-    
-    fileprivate func getAcct() -> String {
-        return acct
-    }
 
+//Responsibilities:
+//Provide category‑level summaries
     
-}
-
-fileprivate struct formMap {
-    // MAKE THIS AN ARRAY OF SOME SORT TO GET RID OF ANY, WILL MAKE EASIER IN LONG RUN
+    private let categoryName: String;
+    private var items: [String:BudgetItem] = [:];
+    private var totalBudgeted: Double = 0;
+    private var totalActual: Double = 0;
     
-    private var map : [String: Double] = [:]
+    fileprivate init(categoryName: String, totalBudgeted: Double, totalActual: Double) {
+        self.categoryName = categoryName
+    }
     
-    init(budget: Double, real: Double) {
+    // ADD
+    fileprivate func addItem(name: String, budgetedAmount: Double, actualAmount: Double) {
+        // ADD Item to HashMap
+        let item = BudgetItem(name: name, budgetedAmount: budgetedAmount, actualAmount: actualAmount);
+        items[name] = item;
         
-        let difference : Double = budget - real
-    
-        self.map = ["Budget": budget, "Real": real, "Difference": difference]
-    }
-    
-    fileprivate func getBudget() -> Double {
-        return map["Budget"] ?? 0
-    }
-    
-    fileprivate func getReal() -> Double {
-        return map["Real"] ?? 0
-    }
-    
-    fileprivate func getDifference() -> Double {
-        return map["Difference"] ?? 0
-    }
-    
-    fileprivate mutating func changeData(newBudget: Double, newReal: Double, newDifference: Double) -> Bool {
+        // Update Total Budget
+        self.totalBudgeted += budgetedAmount
         
-        self.map["Budget"] = newBudget
-        self.map["Real"] = newReal
-        self.map["Difference"] = newDifference
+        // Update Total Actual
+        self.totalActual += actualAmount
+    }
+    
+    // REMOVE
+    fileprivate func removeItem(name: String) {
+        // Update Total Budget and Actual
+        self.totalActual -= items[name]?.getActualAmount() ?? 0
+        self.totalBudgeted -= items[name]?.getBudgetedAmount() ?? 0
+        
+        // Remove from HashMap
+        items.removeValue(forKey: name);
+    }
+    
+    // UPDATES
+    
+    // Item Name -> check and make sure name isnt in hash first
+    fileprivate func updateName(oldName: String, newName: String) -> Bool {
+        // Check if an item with this name already exists in the category
+        if self.items[newName] != nil {
+            return false
+        }
+        // Ensure the old item exists
+        guard let item = self.items.removeValue(forKey: oldName) else {
+            return false
+        }
+        // Update the item's internal name and reinsert under the new key
+        item.updateName(name: newName)
+        self.items[newName] = item
         return true
     }
+    
+    // Item Budget
+    fileprivate func updateBudget(name: String, newBudget: Double) -> Bool {
+        guard let item = self.items[name] else { return false }
+        // Adjust totals by removing the old budget and adding the new one
+        self.totalBudgeted -= item.getBudgetedAmount()
+        self.totalBudgeted += newBudget
+        item.setBudgetedAmount(amount: newBudget)
+        return true
+    }
+     
+    // Item Actual
+    fileprivate func updateActual(name: String, newActual: Double) -> Bool {
+        guard let item = self.items[name] else { return false }
+        self.totalActual -= item.getActualAmount()
+        self.totalActual += newActual
+        item.updateActualAmount(actualAmount: newActual)
+        return true
+    }
+    
+    // COMPUTE TOTALS
+    fileprivate func getTotalBudgeted() -> Double {
+        return self.totalBudgeted
+    }
+    
+    fileprivate func getTotalActual() -> Double {
+        return self.totalActual
+    }
+
+    fileprivate func getTotalDifference() -> Double {
+        return self.totalBudgeted - self.totalActual
+    }
+    
+    //Provide category‑level summaries?????
+
+    
 }
 
-fileprivate class BudgetTracker {
+fileprivate class Transaction {
     
-    private var map: [String: formMap] = [:]
-    
-    fileprivate func getMap() -> [String: formMap] {
-        return self.map
-    }
-    
-    fileprivate func addDescriptionToMap(description: String, budget: Double, real: Double) {
-        self.map[description] = formMap(budget: budget, real: real)
-    }
-    
-    fileprivate func removeDescriptionFromMap(description: String) {
-        self.map.removeValue(forKey: description)
-    }
-    
-    fileprivate func changeDataWithDescription(description: String, newBudget: Double, newReal: Double, newDifference: Double) -> Bool {
-        guard var entry = self.map[description] else { return false }
-        if entry.changeData(newBudget: newBudget, newReal: newReal, newDifference: newDifference) {
-            self.map[description] = entry
-            return true
-        }
-        return false
-    }
-    
-    fileprivate func changeDescription(oldDescription: String, newDescription: String) {
-        guard let value = self.map[oldDescription] else { return }
-        self.map[newDescription] = value
-        self.map.removeValue(forKey: oldDescription)
-    }
 }
 
-struct Budgeter {
+fileprivate class TransactionLog {
     
-    private var income: [IncomeTracker] = []
-    private var bills: BudgetTracker = BudgetTracker()
-    private var subscriptions: BudgetTracker = BudgetTracker()
-    private var expenses: BudgetTracker = BudgetTracker()
-    private var savings: BudgetTracker = BudgetTracker()
-    private var debts: BudgetTracker = BudgetTracker()
-    
-    
-    public func getTotalBudget() -> Double {
-        return getTotalExpensesBudget() - getTotalBillsBudget() - getTotalDebtsBudget()
-            - getTotalSubscriptionsBudget() - getTotalSavingsBudget() + getTotalIncomeExpected()
-    }
-    
-    public func getCertainBudget(category: BudgetCategory) -> Double {
-        switch category {
-        case .bills:
-            return getTotalBillsBudget()
-        case .income:
-            return getTotalIncomeExpected()
-        case .expenses:
-            return getTotalExpensesBudget()
-        case .savings:
-            return getTotalSavingsBudget()
-        case .debts:
-            return getTotalDebtsBudget()
-        case .subscriptions:
-            return getTotalSubscriptionsBudget()
-        }
-    }
-    
-    public func getTotalRealSpending() -> Double {
-        return getTotalExpensesRealSpending() - getTotalBillsRealSpending() - getTotalDebtsRealSpending()
-        - getTotalSubscriptionsRealSpending() - getTotalSavingsRealSpending() + getTotalIncomeReal()
-    }
-    
-    public func getCertianRealSpending(category: BudgetCategory) -> Double {
-        switch category {
-        case .bills:
-            return getTotalBillsRealSpending()
-        case .income:
-            return getTotalIncomeReal()
-        case .expenses:
-            return getTotalExpensesRealSpending()
-        case .savings:
-            return getTotalSavingsRealSpending()
-        case .debts:
-            return getTotalDebtsRealSpending()
-        case .subscriptions:
-            return getTotalSubscriptionsRealSpending()
-        }
-    }
-    
-    public mutating func addIncomeSource(source: String = "", payday: Date, expected: Double, real: Double, acct: String = "") {
-        income.append(IncomeTracker(source: source, payday: payday, expected: expected, real: real, acct: acct))
-    }
-
-    private func getTotalBillsBudget() -> Double {
-        bills.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getBudget()
-        }
-    }
-    
-    private func getTotalIncomeExpected() -> Double {
-        income.reduce(0) { partial, entry in
-            partial + entry.getExpected()
-        }
-    }
-    
-    private func getTotalExpensesBudget() -> Double {
-        expenses.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getBudget()
-        }
-    }
-    
-    private func getTotalSavingsBudget() -> Double {
-        savings.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getBudget()
-        }
-    }
-    
-    private func getTotalDebtsBudget() -> Double {
-        debts.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getBudget()
-        }
-    }
-    
-    private func getTotalSubscriptionsBudget() -> Double {
-        subscriptions.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getBudget()
-        }
-    }
-    
-    private func getTotalBillsRealSpending() -> Double {
-        bills.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getReal()
-        }
-    }
-
-    private func getTotalIncomeReal() -> Double {
-        income.reduce(0) { partial, entry in
-            partial + entry.getReal()
-        }
-    }
-
-    private func getTotalExpensesRealSpending() -> Double {
-        expenses.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getReal()
-        }
-    }
-
-    private func getTotalSavingsRealSpending() -> Double {
-        savings.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getReal()
-        }
-    }
-
-    private func getTotalDebtsRealSpending() -> Double {
-        debts.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getReal()
-        }
-    }
-
-    private func getTotalSubscriptionsRealSpending() -> Double {
-        subscriptions.getMap().values.reduce(0) { partial, entry in
-            partial + entry.getReal()
-        }
-    }
 }
 
+public class Budget {
+    
+}
 
