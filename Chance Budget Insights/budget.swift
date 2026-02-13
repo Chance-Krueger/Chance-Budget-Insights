@@ -1,3 +1,6 @@
+import Foundation
+
+
 fileprivate class BudgetItem {
     
     private var name: String;
@@ -50,7 +53,7 @@ fileprivate class BudgetCategory {
     private var totalBudgeted: Double = 0;
     private var totalActual: Double = 0;
     
-    fileprivate init(categoryName: String, totalBudgeted: Double, totalActual: Double) {
+    fileprivate init(categoryName: String) {
         self.categoryName = categoryName
     }
     
@@ -132,15 +135,139 @@ fileprivate class BudgetCategory {
     
 }
 
-fileprivate class Transaction {
+fileprivate class Transaction: Equatable {
     
+    private var date: Date
+    private var budgetName: String
+    private var amount: Double
+    private var category: BudgetCategory
+    private var account: String
+    
+    init(date: Date, budgetName: String, amount: Double, category: BudgetCategory, account: String) {
+        self.date = date
+        self.budgetName = budgetName
+        self.amount = amount
+        self.category = category
+        self.account = account
+    }
+    
+    fileprivate func getDate() -> Date {
+        return self.date
+    }
+    
+    fileprivate func getAmount() -> Double {
+        return self.amount
+    }
+    
+    fileprivate func getCategory() -> BudgetCategory {
+        return self.category
+    }
+    
+    fileprivate func getAccount() -> String {
+        return self.account
+    }
+    
+    fileprivate func setDate(_ newDate: Date) {
+        self.date = newDate
+    }
+    
+    fileprivate func setAmount(_ newAmount: Double) {
+        self.amount = newAmount
+    }
+    
+    fileprivate func setCategory(_ newCategory: BudgetCategory) {
+        self.category = newCategory
+    }
+    
+    fileprivate func setAccount(_ newAccount: String) {
+        self.account = newAccount
+    }
+    
+    static func == (lhs: Transaction, rhs: Transaction) -> Bool {
+        return lhs.getDate() == rhs.getDate()
+        && lhs.getAmount() == rhs.getAmount()
+        && lhs.getAccount() == rhs.getAccount()
+        // For category comparison, use identity for now since BudgetCategory isn't Equatable
+        && lhs.getCategory() === rhs.getCategory()
+    }
 }
 
 fileprivate class TransactionLog {
     
+    private var transactions: [Date: [Transaction]] = [:]
+    
+    fileprivate func addTransaction(newTransaction: Transaction) {
+        if transactions[newTransaction.getDate()] != nil {
+            transactions[newTransaction.getDate()]!.append(newTransaction)
+        } else {
+            transactions[newTransaction.getDate()] = [newTransaction]
+        }
+    }
+    
+    fileprivate func removeTransaction(deleteTransaction: Transaction) {
+        let date = deleteTransaction.getDate()
+        guard var list = transactions[date] else { return }
+        if let idx = list.firstIndex(of: deleteTransaction) {
+            list.remove(at: idx)
+        }
+        if list.isEmpty {
+            transactions.removeValue(forKey: date)
+        } else {
+            transactions[date] = list
+        }
+    }
+    
+//Responsibilities:
+//
+//Filter by category, date, amount, BudgetName
+//
+//Feed data into the insights engine later
+    
+    
+    
 }
 
 public class Budget {
+
+
+//    Responsibilities:
+//    Provide a full monthly snapshot
+        // Where does my money Go?          | \
+        // Spending Overview                -  > HASHMAPS
+        // Budget vs Real (Categories)      | /
+    
+    private var income: BudgetCategory = BudgetCategory(categoryName: "Income")
+    private var bills: BudgetCategory = BudgetCategory(categoryName: "Bills")
+    private var subscriptions: BudgetCategory = BudgetCategory(categoryName: "Subscriptions")
+    private var expenses: BudgetCategory = BudgetCategory(categoryName: "Expenses")
+    private var savings: BudgetCategory = BudgetCategory(categoryName: "Savings")
+    private var debts: BudgetCategory = BudgetCategory(categoryName: "Debts")
+    
+    public func getTotalBudget() -> Double {
+        return self.income.getTotalBudgeted() - self.bills.getTotalBudgeted() - self.subscriptions.getTotalBudgeted() + self.expenses.getTotalBudgeted() - self.savings.getTotalBudgeted() - self.debts.getTotalBudgeted()
+    }
+    
+    public func getTotalActual() -> Double {
+        return self.income.getTotalActual() - self.bills.getTotalActual() - self.subscriptions.getTotalActual() + self.expenses.getTotalActual() - self.savings.getTotalActual() - self.debts.getTotalActual()
+    }
+    
+    public func getLeftToBudget() -> Double {
+        return self.getTotalBudget() - self.getTotalActual()
+    }
+    
+    public func getLeftToSpend() -> Double {
+        return self.getTotalActual() - self.getTotalBudget()
+    }
+    
+    public func getTotalIncome() -> Double {
+        return self.income.getTotalActual()
+    }
+    
+    public func getTotalExpenses() -> Double {
+        return self.expenses.getTotalActual() + self.bills.getTotalActual() + self.subscriptions.getTotalActual() +
+        self.debts.getTotalActual() + self.savings.getTotalActual()
+    }
+    
     
 }
 
