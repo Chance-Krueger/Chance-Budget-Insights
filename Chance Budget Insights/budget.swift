@@ -228,13 +228,6 @@ fileprivate class TransactionLog {
 }
 
 public class Budget {
-
-
-//    Responsibilities:
-//    Provide a full monthly snapshot
-        // Where does my money Go?          | \
-        // Spending Overview                -  > HASHMAPS
-        // Budget vs Real (Categories)      | /
     
     private var income: BudgetCategory = BudgetCategory(categoryName: "Income")
     private var bills: BudgetCategory = BudgetCategory(categoryName: "Bills")
@@ -244,11 +237,11 @@ public class Budget {
     private var debts: BudgetCategory = BudgetCategory(categoryName: "Debts")
     
     public func getTotalBudget() -> Double {
-        return self.income.getTotalBudgeted() - self.bills.getTotalBudgeted() - self.subscriptions.getTotalBudgeted() + self.expenses.getTotalBudgeted() - self.savings.getTotalBudgeted() - self.debts.getTotalBudgeted()
+        return self.income.getTotalBudgeted() - self.bills.getTotalBudgeted() - self.subscriptions.getTotalBudgeted() - self.expenses.getTotalBudgeted() - self.savings.getTotalBudgeted() - self.debts.getTotalBudgeted()
     }
     
     public func getTotalActual() -> Double {
-        return self.income.getTotalActual() - self.bills.getTotalActual() - self.subscriptions.getTotalActual() + self.expenses.getTotalActual() - self.savings.getTotalActual() - self.debts.getTotalActual()
+        return self.income.getTotalActual() - self.bills.getTotalActual() - self.subscriptions.getTotalActual() - self.expenses.getTotalActual() - self.savings.getTotalActual() - self.debts.getTotalActual()
     }
     
     public func getLeftToBudget() -> Double {
@@ -266,6 +259,17 @@ public class Budget {
     public func getTotalExpenses() -> Double {
         return self.expenses.getTotalActual() + self.bills.getTotalActual() + self.subscriptions.getTotalActual() +
         self.debts.getTotalActual() + self.savings.getTotalActual()
+    }
+    
+    //    Responsibilities:
+    //    Provide a full monthly snapshot
+            // Where does my money Go?          | \
+            // Spending Overview                -  > HASHMAPS
+    
+    // Budget vs Real (Categories)
+    public func getBudgetVsActual() -> [String:Double] {
+         
+        return ["Income Actual": self.income.getTotalActual(), "Income Budget": self.income.getTotalBudgeted(), "Bills Actual": self.bills.getTotalActual(), "Bills Budget": self.bills.getTotalBudgeted(), "Subscriptions Actual": self.subscriptions.getTotalActual(), "Subscriptions Budget": self.subscriptions.getTotalBudgeted(), "Expenses Actual": self.expenses.getTotalActual(), "Expenses Budget": self.expenses.getTotalBudgeted(), "Savings Actual": self.savings.getTotalActual(), "Savings Budget": self.savings.getTotalBudgeted(), "Debts Actual": self.debts.getTotalActual(), "Debts Budget": self.debts.getTotalBudgeted()]
     }
     
     
